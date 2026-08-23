@@ -1,0 +1,513 @@
+[
+  {
+    "module": "Auth",
+    "basePath": "/auth",
+    "routes": [
+      {
+        "method": "POST",
+        "path": "/register",
+        "handler": "authController.register",
+        "auth": "Public",
+        "validate": "createUserSchema"
+      },
+      {
+        "method": "POST",
+        "path": "/login",
+        "handler": "authController.loginUser",
+        "auth": "Public",
+        "validate": "loginUserSchema"
+      },
+      {
+        "method": "POST",
+        "path": "/admin/login",
+        "handler": "authController.loginUser",
+        "auth": "Public",
+        "validate": "loginUserSchema"
+      },
+      {
+        "method": "POST",
+        "path": "/admin/forgot-password",
+        "handler": "authController.sendOtp",
+        "auth": "Public"
+      },
+      {
+        "method": "POST",
+        "path": "/admin/verify-reset-otp",
+        "handler": "authController.verifyOtp",
+        "auth": "Public"
+      },
+      {
+        "method": "POST",
+        "path": "/admin/reset-password",
+        "handler": "authController.setNewPassword",
+        "auth": "Public"
+      },
+      {
+        "method": "POST",
+        "path": "/admin/change-password",
+        "handler": "authController.changePassword",
+        "auth": "Authenticated",
+        "validate": "changePasswordSchema"
+      },
+      {
+        "method": "POST",
+        "path": "/check-user",
+        "handler": "authController.checkUser",
+        "auth": "Public"
+      },
+      {
+        "method": "POST",
+        "path": "/change-password",
+        "handler": "authController.changePassword",
+        "auth": "Authenticated",
+        "validate": "changePasswordSchema"
+      },
+      {
+        "method": "POST",
+        "path": "/send-otp",
+        "handler": "authController.sendOtp",
+        "auth": "Public"
+      },
+      {
+        "method": "POST",
+        "path": "/verify-otp",
+        "handler": "authController.verifyOtp",
+        "auth": "Public"
+      },
+      {
+        "method": "POST",
+        "path": "/set-new-password",
+        "handler": "authController.setNewPassword",
+        "auth": "Public"
+      },
+      {
+        "method": "POST",
+        "path": "/refresh-token",
+        "handler": "authController.refreshToken",
+        "auth": "Public"
+      },
+      {
+        "method": "POST",
+        "path": "/logout",
+        "handler": "authController.logout",
+        "auth": "Public"
+      }
+    ]
+  },
+  {
+    "module": "User",
+    "basePath": "/users",
+    "routes": [
+      {
+        "method": "POST",
+        "path": "/",
+        "handler": "userController.createUser",
+        "auth": "Authenticated",
+        "roles": [
+          "Admin"
+        ],
+        "validate": "CreateUserSchema"
+      },
+      {
+        "method": "GET",
+        "path": "/",
+        "handler": "userController.getAllUsers",
+        "auth": "Authenticated"
+      },
+      {
+        "method": "GET",
+        "path": "/riders",
+        "handler": "userController.getRiders",
+        "auth": "Authenticated",
+        "roles": [
+          "Admin"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/me",
+        "handler": "userController.getMyProfile",
+        "auth": "Authenticated"
+      },
+      {
+        "method": "PATCH",
+        "path": "/me",
+        "handler": "userController.updateMyProfile",
+        "auth": "Authenticated",
+        "upload": "profileImage (single)"
+      },
+      {
+        "method": "PATCH",
+        "path": "/me/location",
+        "handler": "userController.updateLocation",
+        "auth": "Authenticated"
+      },
+      {
+        "method": "PATCH",
+        "path": "/me/documents",
+        "handler": "userController.updateDriverDocuments",
+        "auth": "Authenticated",
+        "upload": "emaratesId (1), drivingLicense (1), vehicleRegistration (1)"
+      },
+      {
+        "method": "GET",
+        "path": "/me/addresses",
+        "handler": "userController.getAddresses",
+        "auth": "Authenticated"
+      },
+      {
+        "method": "POST",
+        "path": "/me/addresses",
+        "handler": "userController.addAddress",
+        "auth": "Authenticated"
+      },
+      {
+        "method": "PATCH",
+        "path": "/me/addresses/:addressId",
+        "handler": "userController.updateAddress",
+        "auth": "Authenticated"
+      },
+      {
+        "method": "DELETE",
+        "path": "/me/addresses/:addressId",
+        "handler": "userController.deleteAddress",
+        "auth": "Authenticated"
+      },
+      {
+        "method": "GET",
+        "path": "/:id",
+        "handler": "userController.getUserById",
+        "auth": "Authenticated"
+      },
+      {
+        "method": "PATCH",
+        "path": "/:id",
+        "handler": "userController.updateUser",
+        "auth": "Authenticated",
+        "roles": [
+          "Admin"
+        ],
+        "upload": "profileImage (single)"
+      },
+      {
+        "method": "DELETE",
+        "path": "/:id",
+        "handler": "userController.deleteUser",
+        "auth": "Authenticated",
+        "roles": [
+          "Admin"
+        ]
+      }
+    ]
+  },
+  {
+    "module": "Common",
+    "basePath": "/common",
+    "routes": [
+      {
+        "method": "GET",
+        "path": "/",
+        "handler": "commonController.getSettings",
+        "auth": "Public"
+      },
+      {
+        "method": "PATCH",
+        "path": "/content",
+        "handler": "commonController.updateContent",
+        "auth": "Authenticated",
+        "roles": [
+          "Admin"
+        ]
+      },
+      {
+        "method": "PATCH",
+        "path": "/delivery-settings",
+        "handler": "commonController.updateDeliverySettings",
+        "auth": "Authenticated",
+        "roles": [
+          "Admin"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/notification",
+        "handler": "commonController.getNotification",
+        "auth": "Authenticated"
+      },
+      {
+        "method": "GET",
+        "path": "/my-notifications",
+        "handler": "commonController.getMyNotifications",
+        "auth": "Authenticated"
+      },
+      {
+        "method": "PATCH",
+        "path": "/notification/:notificationId/read",
+        "handler": "commonController.updateNotificationRead",
+        "auth": "Authenticated"
+      },
+      {
+        "method": "GET",
+        "path": "/admin/users-stats/:userId",
+        "handler": "commonController.getUserStatsById",
+        "auth": "Authenticated",
+        "roles": [
+          "Admin"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/my-stats",
+        "handler": "commonController.getMyStats",
+        "auth": "Authenticated"
+      }
+    ]
+  },
+  {
+    "module": "Order",
+    "basePath": "/orders",
+    "routes": [
+      {
+        "method": "GET",
+        "path": "/",
+        "handler": "orderController.getOrders",
+        "auth": "Authenticated"
+      },
+      {
+        "method": "GET",
+        "path": "/summary",
+        "handler": "orderController.getOrderSummary",
+        "auth": "Authenticated",
+        "roles": [
+          "Admin"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/",
+        "handler": "orderController.createOrder",
+        "auth": "Authenticated"
+      },
+      {
+        "method": "POST",
+        "path": "/estimate-price",
+        "handler": "orderController.estimatePrice",
+        "auth": "Authenticated"
+      },
+      {
+        "method": "GET",
+        "path": "/:id",
+        "handler": "orderController.getOrderById",
+        "auth": "Authenticated"
+      },
+      {
+        "method": "PATCH",
+        "path": "/:id/cancel",
+        "handler": "orderController.cancelOrder",
+        "auth": "Authenticated"
+      },
+      {
+        "method": "PATCH",
+        "path": "/:id/assign-rider",
+        "handler": "orderController.assignRider",
+        "auth": "Authenticated"
+      },
+      {
+        "method": "PATCH",
+        "path": "/:id/status",
+        "handler": "orderController.updateStatus",
+        "auth": "Authenticated"
+      },
+      {
+        "method": "PATCH",
+        "path": "/:id/checkpoints",
+        "handler": "orderController.addCheckpoint",
+        "auth": "Authenticated"
+      },
+      {
+        "method": "PATCH",
+        "path": "/:id/completion-proof",
+        "handler": "orderController.submitCompletionProof",
+        "auth": "Authenticated",
+        "upload": "images (single)"
+      },
+      {
+        "method": "PATCH",
+        "path": "/:id/review",
+        "handler": "orderController.addReview",
+        "auth": "Authenticated"
+      }
+    ]
+  },
+  {
+    "module": "Payment",
+    "basePath": "/payments",
+    "routes": [
+      {
+        "method": "POST",
+        "path": "/webhook/tap",
+        "handler": "paymentController.webhook",
+        "auth": "Public"
+      },
+      {
+        "method": "POST",
+        "path": "/initiate",
+        "handler": "paymentController.initiatePayment",
+        "auth": "Authenticated"
+      },
+      {
+        "method": "POST",
+        "path": "/verify",
+        "handler": "paymentController.verifyPayment",
+        "auth": "Authenticated"
+      },
+      {
+        "method": "GET",
+        "path": "/history",
+        "handler": "paymentController.getPaymentHistory",
+        "auth": "Authenticated"
+      }
+    ]
+  },
+  {
+    "module": "Dashboard",
+    "basePath": "/dashboard",
+    "routes": [
+      {
+        "method": "GET",
+        "path": "/rider",
+        "handler": "dashboardController.getRiderStats",
+        "auth": "Authenticated"
+      },
+      {
+        "method": "GET",
+        "path": "/rider/earnings",
+        "handler": "dashboardController.getRiderEarnings",
+        "auth": "Authenticated"
+      },
+      {
+        "method": "GET",
+        "path": "/overview",
+        "handler": "dashboardController.getOverview",
+        "auth": "Authenticated",
+        "roles": [
+          "Admin"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/user-growth",
+        "handler": "dashboardController.getUserGrowth",
+        "auth": "Authenticated",
+        "roles": [
+          "Admin"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/rider-growth",
+        "handler": "dashboardController.getRiderGrowth",
+        "auth": "Authenticated",
+        "roles": [
+          "Admin"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/revenue-trend",
+        "handler": "dashboardController.getRevenueTrend",
+        "auth": "Authenticated",
+        "roles": [
+          "Admin"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/earnings",
+        "handler": "dashboardController.getAdminEarnings",
+        "auth": "Authenticated",
+        "roles": [
+          "Admin"
+        ]
+      },
+      {
+        "method": "GET",
+        "path": "/hot-areas",
+        "handler": "dashboardController.getHotAreas",
+        "auth": "Authenticated",
+        "roles": [
+          "Admin"
+        ]
+      }
+    ]
+  },
+  {
+    "module": "Notification",
+    "basePath": "/notifications",
+    "routes": [
+      {
+        "method": "GET",
+        "path": "/",
+        "handler": "commonController.getMyNotifications",
+        "auth": "Authenticated"
+      },
+      {
+        "method": "PATCH",
+        "path": "/read-all",
+        "handler": "commonController.markAllNotificationsRead",
+        "auth": "Authenticated"
+      },
+      {
+        "method": "PATCH",
+        "path": "/:notificationId/read",
+        "handler": "commonController.updateNotificationRead",
+        "auth": "Authenticated"
+      }
+    ]
+  },
+  {
+    "module": "Statistics",
+    "basePath": "/statistics",
+    "routes": [
+      {
+        "method": "GET",
+        "path": "/admin-bookings",
+        "handler": "orderController.getOrders",
+        "auth": "Authenticated",
+        "roles": [
+          "Admin"
+        ]
+      }
+    ]
+  },
+  {
+    "module": "Report",
+    "basePath": "/reports",
+    "routes": [
+      {
+        "method": "POST",
+        "path": "/",
+        "handler": "reportController.createReport",
+        "auth": "Authenticated"
+      },
+      {
+        "method": "GET",
+        "path": "/",
+        "handler": "reportController.getReports",
+        "auth": "Authenticated",
+        "roles": [
+          "Admin"
+        ]
+      },
+      {
+        "method": "PATCH",
+        "path": "/:id/resolve",
+        "handler": "reportController.resolveReport",
+        "auth": "Authenticated",
+        "roles": [
+          "Admin"
+        ]
+      }
+    ]
+  }
+]

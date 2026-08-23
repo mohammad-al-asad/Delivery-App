@@ -1,0 +1,31 @@
+export const Colors = {
+    primary: '#BEFFB6',
+    primaryDark: '#9FE096',
+    secondary: '#2D3748',
+    background: '#FFFFFF',
+    backgroundAlt: '#F7FAFC',
+    text: '#1A202C',
+    textLight: '#718096',
+    icon: '#718096',
+    border: '#E2E8F0',
+    success: '#48BB78',
+    warning: '#ED8936',
+    error: '#F56565',
+    white: '#FFFFFF',
+    black: '#000000',
+    tabIconDefault: '#718096',
+    gray: {
+        50: '#F7FAFC',
+        100: '#EDF2F7',
+        200: '#E2E8F0',
+        300: '#CBD5E0',
+        400: '#A0AEC0',
+        500: '#718096',
+        600: '#4A5568',
+        700: '#2D3748',
+        800: '#1A202C',
+        900: '#171923',
+    },
+} as const;
+
+export type ColorPalette = typeof Colors;

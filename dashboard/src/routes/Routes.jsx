@@ -1,0 +1,143 @@
+import { createBrowserRouter } from "react-router-dom";
+import SignInPage from "../pages/auth/SignInPage";
+import ForgetPassword from "../pages/auth/ForgetPassword";
+import VerificationCode from "../pages/auth/VerificationCode";
+import ResetPassword from "../pages/auth/ResetPassword";
+import MainLayout from "../layout/MainLayout";
+import ProtectedRoute from "./ProtectedRoute";
+import DashboardPage from "../pages/dashboard/DashboardPage";
+import PrivacyPolicy from "../pages/Privacy Policy/PrivacyPolicy";
+import TermsCondition from "../pages/Terms Condition/TermsCondition";
+import UserDetails from "../pages/userDetails/UserDetails";
+import Notifications from "../pages/Notifications/Notifications";
+import ProfilePage from "../pages/profile/ProfilePage";
+import Settings from "../pages/Settings/Settings";
+import FaqSettings from "../pages/Settings/FaqSettings";
+import ChangePass from "../pages/profile/ChangePass";
+import AboutUs from "../pages/optional/AboutUs";
+import EditProfile from "../pages/profile/EditProfile";
+import Earnings from "../pages/Earnings/Earnings";
+import DriverPayouts from "../pages/DriverPayouts/DriverPayouts";
+import Listing from "../pages/Listing/Listing";
+import RiderManagement from "../pages/RiderManagement/RiderManagement";
+import DriverVerification from "../pages/DriverVerification/DriverVerification";
+import Parameter from "../pages/Parameter/Parameter";
+import HotArea from "../pages/HotArea/HotArea";
+import ErrorPage from "../components/ErrorPage/ErrorPage";
+import SupportMessages from "../pages/SupportMessages/SupportMessages";
+
+const router = createBrowserRouter([
+  {
+    path: "/sign-in",
+    element: <SignInPage />,
+    errorElement: <ErrorPage />,
+  },
+  {
+    path: "/forget-password",
+    element: <ForgetPassword />,
+    errorElement: <ErrorPage />,
+  },
+  {
+    path: "/verification-code",
+    element: <VerificationCode />,
+    errorElement: <ErrorPage />,
+  },
+  {
+    path: "/new-password",
+    element: <ResetPassword />,
+    errorElement: <ErrorPage />,
+  },
+
+  {
+    element: <ProtectedRoute />,
+    errorElement: <ErrorPage />,
+    children: [
+      {
+        path: "/",
+        element: <MainLayout />,
+        children: [
+          {
+            index: true,
+            element: <DashboardPage />,
+          },
+          {
+            path: "user-details",
+            element: <UserDetails />,
+          },
+          {
+            path: "rider-management",
+            element: <RiderManagement />,
+          },
+          {
+            path: "driver-verification",
+            element: <DriverVerification />,
+          },
+          {
+            path: "earnings",
+            element: <Earnings />,
+          },
+          {
+            path: "driver-payouts",
+            element: <DriverPayouts />,
+          },
+          {
+            path: "order-management",
+            element: <Listing />,
+          },
+          {
+            path: "notifications",
+            element: <Notifications />,
+          },
+
+          // settings
+          {
+            path: "privacy-policy",
+            element: <PrivacyPolicy />,
+          },
+          {
+            path: "terms-and-condition",
+            element: <TermsCondition />,
+          },
+          {
+            path: "settings",
+            element: <Settings />,
+          },
+          {
+            path: "edit-profile",
+            element: <EditProfile />,
+          },
+          {
+            path: "change-password",
+            element: <ChangePass />,
+          },
+          {
+            path: "about-us",
+            element: <AboutUs />,
+          },
+          {
+            path: "faq-settings",
+            element: <FaqSettings />,
+          },
+          {
+            path: "parameter",
+            element: <Parameter />,
+          },
+          {
+            path: "hot-area",
+            element: <HotArea />,
+          },
+          {
+            path: "profile",
+            element: <ProfilePage />,
+          },
+          {
+            path: "support-messages",
+            element: <SupportMessages />,
+          },
+        ],
+      },
+    ],
+  },
+]);
+
+export default router;

@@ -1,0 +1,106 @@
+{
+  "project_info": {
+    "project_number": "368132898837",
+    "project_id": "gogo-3b5d9",
+    "storage_bucket": "gogo-3b5d9.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:368132898837:android:99c914cc3868d41c9dce1c",
+        "android_client_info": {
+          "package_name": "com.gogo.driver"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "368132898837-u82ot4c9ke8aldhgbpc1gf1q8gt2mm74.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.gogo.driver",
+            "certificate_hash": "fe2e33901c3bac226f5ac4559fc1fd34df435837"
+          }
+        },
+        {
+          "client_id": "368132898837-5ibfhvj4rrvl0uf5on02ormpj4f37nct.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBYsYSPXFL_Ae6u3xnYnsfwNauyThP5tDc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "368132898837-5ibfhvj4rrvl0uf5on02ormpj4f37nct.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "368132898837-80k22q4k6f6valc9udmq5njgpkocs0fm.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.gogo.driver"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:368132898837:android:b03274385e5348759dce1c",
+        "android_client_info": {
+          "package_name": "com.gogo.user"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "368132898837-4ben8hql85jdmccueq0bpvkqkkmo9ep0.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.gogo.user",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "368132898837-pblendfn7feg0tp5vp706okve5lelfi5.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.gogo.user",
+            "certificate_hash": "8537619516f2630848a83f0b80f9bd2bfa70728e"
+          }
+        },
+        {
+          "client_id": "368132898837-5ibfhvj4rrvl0uf5on02ormpj4f37nct.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBYsYSPXFL_Ae6u3xnYnsfwNauyThP5tDc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "368132898837-5ibfhvj4rrvl0uf5on02ormpj4f37nct.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "368132898837-80k22q4k6f6valc9udmq5njgpkocs0fm.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.gogo.driver"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

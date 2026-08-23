@@ -1,0 +1,80 @@
+{
+  "expo": {
+    "name": "GOGO Earn",
+    "slug": "gogo-earn",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/logo/logo.png",
+    "scheme": "gogo-earn",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/logo/logo.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#2D3748"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.gogo.driver",
+      "googleServicesFile": "./GoogleService-Info.plist",
+      "config": {
+        "googleMapsApiKey": "AIzaSyCZEptpJ79M7XDpAvA2UdsZQ91BuAtFSEo"
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/logo/logo.png",
+        "backgroundColor": "#2D3748"
+      },
+      "package": "com.gogo.driver",
+      "googleServicesFile": "./google-services.json",
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyCZEptpJ79M7XDpAvA2UdsZQ91BuAtFSEo"
+        }
+      },
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/logo/logo.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/logo/logo.png",
+          "imageWidth": 200,
+          "backgroundColor": "#2D3748"
+        }
+      ],
+      [
+        "react-native-maps",
+        {
+          "iosGoogleMapsApiKey": "AIzaSyCZEptpJ79M7XDpAvA2UdsZQ91BuAtFSEo",
+          "androidGoogleMapsApiKey": "AIzaSyCZEptpJ79M7XDpAvA2UdsZQ91BuAtFSEo"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app accesses your photos to let you share them with your friends.",
+          "cameraPermission": "The app accesses your camera to let you take delivery proof photos."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "87b9bebf-0f6b-44a9-bbca-376a234d9ca7"
+      }
+    }
+  }
+}

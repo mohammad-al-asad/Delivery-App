@@ -1,0 +1,54 @@
+name: Deploy to EC2 instance
+
+on: 
+  push:
+    branches:
+      - dev
+    
+env:
+  NODE_VERSION: 24
+
+jobs:
+  deploy:
+    name: Select machine
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Copy code to server
+        uses: actions/checkout@v4
+
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{env.NODE_VERSION}}
+
+      - name: Install pnpm
+        run: npm i -g pnpm
+      
+      - name: Install dependencies
+        run: pnpm i
+
+      - name: Build the project
+        run: pnpm run build
+
+      - name: Deploy the backend
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{secrets.EC2_HOST}}
+          username: ${{secrets.EC2_USERNAME}}
+          key: ${{secrets.PRIVATE_KEY}}
+          script: |
+            if [ ! -d "YOUR_REPO" ]; then
+              git clone https://github.com/YOUR_USERNAME/YOUR_REPO.git
+            fi
+
+            cd YOUR_REPO
+
+            git pull origin main
+
+            npm i -g pnpm
+            pnpm install
+            pnpm build
+
+            pm2 restart app || pm2 start pnpm --name "app" -- start
+        
