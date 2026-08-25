@@ -170,7 +170,7 @@ export class UserService {
       throw new apiError(Errors.NotFound.code, "User not found");
     }
 
-    const activeOrderFilter =
+    const activeOrderFilter: any =
       user.role === "Rider"
         ? {
             rider: id,
@@ -215,15 +215,18 @@ export class UserService {
       (accountNumber ? accountNumber.slice(-4) : undefined);
 
     const payoutAccount = {
-      provider: "Tap",
-      status: "Connected",
-      tapMerchantId: body.tapMerchantId,
+      provider: body.provider || "Stripe",
+      status: body.status || "Connected",
+      stripeAccountId: body.stripeAccountId,
       accountHolderName: body.accountHolderName,
       bankName: body.bankName,
       iban: body.iban,
       accountNumberLast4,
       country: body.country || "AE",
       currency: body.currency || "AED",
+      chargesEnabled: body.chargesEnabled ?? false,
+      payoutsEnabled: body.payoutsEnabled ?? true,
+      detailsSubmitted: body.detailsSubmitted ?? true,
       connectedAt: new Date(),
       updatedAt: new Date(),
     };

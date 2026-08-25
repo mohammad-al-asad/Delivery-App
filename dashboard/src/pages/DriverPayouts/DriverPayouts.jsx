@@ -105,9 +105,34 @@ function DriverPayouts() {
       ),
     },
     {
+      title: "Stripe Status",
+      key: "stripeStatus",
+      render: (_, record) => {
+        const isConnected =
+          record.rider?.payoutAccount?.status === "Connected" &&
+          record.rider?.payoutAccount?.payoutsEnabled;
+        const isPending =
+          record.rider?.payoutAccount?.status === "Pending" ||
+          (record.rider?.payoutAccount?.stripeAccountId && !isConnected);
+
+        if (isConnected) {
+          return <Tag color="green">Stripe Active</Tag>;
+        }
+        if (isPending) {
+          return <Tag color="orange">Stripe Pending</Tag>;
+        }
+        return <Tag color="default">Not Connected</Tag>;
+      },
+    },
+    {
       title: "Total Revenue",
       dataIndex: "totalRevenue",
       render: money,
+    },
+    {
+      title: "Direct Stripe Paid",
+      dataIndex: "stripeTransferredEarnings",
+      render: (value, record) => money(value ?? record.paidEarnings),
     },
     {
       title: "Total Earnings",

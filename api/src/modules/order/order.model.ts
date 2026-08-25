@@ -89,9 +89,17 @@ const orderSchema = new Schema(
       type: Number,
       default: 0,
     },
+    stripePaymentIntentId: {
+      type: String,
+      index: true,
+    },
+    stripeTransferId: {
+      type: String,
+      index: true,
+    },
     payoutStatus: {
       type: String,
-      enum: ["NotReady", "Pending", "Paid", "Failed"],
+      enum: ["NotReady", "Pending", "Transferred", "Paid", "Failed"],
       default: "NotReady",
     },
     settlementStatus: {
@@ -106,7 +114,7 @@ const orderSchema = new Schema(
     settledAt: Date,
     payoutAccountSnapshot: {
       provider: String,
-      tapMerchantId: String,
+      stripeAccountId: String,
       status: String,
       accountNumberLast4: String,
       iban: String,

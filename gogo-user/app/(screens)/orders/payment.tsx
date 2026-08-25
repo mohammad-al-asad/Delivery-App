@@ -31,8 +31,9 @@ import { resetOrderDraft } from "../../../Redux/Slice/orderDraftSlice";
 const STEPS = ["Locations", "Vehicle", "Checkout", "Payment"];
 
 const PAYMENT_METHODS = [
-  { id: "card", name: "Online Payment", balance: null, icon: "card-outline" },
-  { id: "cash", name: "Cash on Delivery", balance: null, icon: "cash-outline" },
+  { id: "card", name: "Online Card Payment (Stripe)", balance: null, icon: "card-outline" },
+  // Cash on Delivery is disabled for now
+  // { id: "cash", name: "Cash on Delivery", balance: null, icon: "cash-outline" },
 ];
 
 export default function PaymentScreen() {
@@ -100,14 +101,100 @@ export default function PaymentScreen() {
       const result = await initiatePayment({
         orderId,
         amount: amount ? parseFloat(amount) : undefined,
-        sourceId: "src_all",
       }).unwrap();
 
-      if (result.data.transactionUrl) {
-        setTransactionUrl(result.data.transactionUrl);
-        setCurrentChargeId(result.data.chargeId);
+      if (result.data?.clientSecret) {
+        setCurrentChargeId(result.data.paymentIntentId);
+        const pk =
+          result.data.publishableKey ||
+          process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY ||
+          "pk_test_placeholder";
+        
+        // Generate secure Stripe Elements checkout HTML
+        const stripeHtml = `
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+              <script src="https://js.stripe.com/v3/"></script>
+              <style>
+                * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+                body { margin: 0; padding: 20px; background: #f8fafc; display: flex; flex-direction: column; min-height: 100vh; }
+                .card-box { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
+                .title { font-size: 18px; font-weight: 700; color: #1e293b; margin-bottom: 6px; }
+                .amount-tag { font-size: 24px; font-weight: 800; color: #2D8C3C; margin-bottom: 20px; }
+                #payment-element { margin-bottom: 24px; }
+                button { background: #2D8C3C; color: white; border: none; border-radius: 12px; width: 100%; padding: 16px; font-size: 16px; font-weight: 700; cursor: pointer; transition: opacity 0.2s; }
+                button:disabled { opacity: 0.6; cursor: not-allowed; }
+                #error-message { color: #dc2626; font-size: 14px; margin-top: 12px; text-align: center; }
+                .badge { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 18px; font-size: 12px; color: #64748b; }
+              </style>
+            </head>
+            <body>
+              <div class="card-box">
+                <div class="title">Complete Payment</div>
+                <div class="amount-tag">AED ${totalAmount.toFixed(2)}</div>
+                <form id="payment-form">
+                  <div id="payment-element"></div>
+                  <button id="submit">
+                    <span id="button-text">Pay AED ${totalAmount.toFixed(2)}</span>
+                  </button>
+                  <div id="error-message"></div>
+                </form>
+                <div class="badge">
+                  🔒 Secured with 256-bit Stripe Encryption
+                </div>
+              </div>
+
+              <script>
+                const stripe = Stripe('${pk}');
+                const elements = stripe.elements({ clientSecret: '${result.data.clientSecret}' });
+                const paymentElement = elements.create('payment');
+                paymentElement.mount('#payment-element');
+
+                const form = document.getElementById('payment-form');
+                form.addEventListener('submit', async (e) => {
+                  e.preventDefault();
+                  const btn = document.getElementById('submit');
+                  const btnText = document.getElementById('button-text');
+                  const errorDiv = document.getElementById('error-message');
+                  
+                  btn.disabled = true;
+                  btnText.innerText = "Processing...";
+                  errorDiv.innerText = "";
+
+                  const { error, paymentIntent } = await stripe.confirmPayment({
+                    elements,
+                    redirect: 'if_required',
+                    confirmParams: {
+                      return_url: 'gogo://payment/callback',
+                    },
+                  });
+
+                  if (error) {
+                    errorDiv.innerText = error.message || "Payment failed. Please try again.";
+                    btn.disabled = false;
+                    btnText.innerText = "Pay AED ${totalAmount.toFixed(2)}";
+                    if (window.ReactNativeWebView) {
+                      window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'ERROR', message: error.message }));
+                    }
+                  } else if (paymentIntent && paymentIntent.status === 'succeeded') {
+                    if (window.ReactNativeWebView) {
+                      window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'SUCCESS', paymentIntentId: paymentIntent.id }));
+                    }
+                  } else {
+                    if (window.ReactNativeWebView) {
+                      window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'VERIFY', paymentIntentId: '${result.data.paymentIntentId}' }));
+                    }
+                  }
+                });
+              </script>
+            </body>
+          </html>
+        `;
+        setTransactionUrl(stripeHtml);
       } else {
-        Alert.alert("Error", "Failed to get payment URL");
+        Alert.alert("Error", "Failed to initialize Stripe checkout");
       }
     } catch (error: any) {
       console.error("Payment/Order error:", error);
@@ -120,13 +207,13 @@ export default function PaymentScreen() {
     }
   };
 
-  const handleVerifyPayment = async (chargeId: string) => {
+  const handleVerifyPayment = async (paymentIntentId: string) => {
     try {
-      const result = await verifyPayment({ chargeId }).unwrap();
-      if (result.data.tapStatus === "CAPTURED") {
+      const result = await verifyPayment({ paymentIntentId }).unwrap();
+      if (result.data?.isPaid || result.data?.status === "succeeded" || result.data?.tapStatus === "CAPTURED") {
         setShowSuccessModal(true);
       } else {
-        Alert.alert("Payment Status", `Payment is ${result.data.tapStatus}`);
+        Alert.alert("Payment Status", `Payment status: ${result.data?.status || "Pending"}`);
       }
     } catch (error: any) {
       console.error("Payment verification error:", error);
@@ -368,8 +455,30 @@ export default function PaymentScreen() {
           </View>
           {transactionUrl && (
             <WebView
-              source={{ uri: transactionUrl }}
+              source={
+                transactionUrl.trim().startsWith("<")
+                  ? { html: transactionUrl, baseUrl: "https://stripe.com" }
+                  : { uri: transactionUrl }
+              }
               originWhitelist={["*"]}
+              javaScriptEnabled={true}
+              domStorageEnabled={true}
+              onMessage={(event) => {
+                try {
+                  const data = JSON.parse(event.nativeEvent.data);
+                  if (data.type === "SUCCESS" || data.type === "VERIFY") {
+                    setTransactionUrl(null);
+                    const id = data.paymentIntentId || currentChargeId;
+                    if (id) {
+                      handleVerifyPayment(id);
+                    }
+                  } else if (data.type === "ERROR") {
+                    Alert.alert("Payment Error", data.message || "Payment could not be completed.");
+                  }
+                } catch (e) {
+                  // non-json message
+                }
+              }}
               onShouldStartLoadWithRequest={(request) => {
                 if (request.url.includes("gogo://payment/callback")) {
                   setTransactionUrl(null);

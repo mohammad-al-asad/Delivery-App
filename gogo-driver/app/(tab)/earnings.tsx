@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { ActivityIndicator, Alert, Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View, RefreshControl } from 'react-native';
 import { TransactionItem } from '../../components/TransactionItem';
@@ -13,6 +14,7 @@ const CHART_HEIGHT = 180;
 
 export default function EarningsScreen() {
     const insets = useSafeAreaInsets();
+    const router = useRouter();
     const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month'>('week');
     const { data: earningsData, isLoading, refetch } = useGetRiderEarningsQuery({});
 
@@ -30,9 +32,8 @@ export default function EarningsScreen() {
         dailyTrend: earningsRaw.dailyTrend || [],
         transactions: earningsRaw.transactions || []
     };
-    const hasAdminDue = Number(earnings.adminDue) > 0;
-    const settlementLabel = hasAdminDue ? 'You Owe Admin' : 'Admin Owes You';
-    const settlementAmount = hasAdminDue ? earnings.adminDue : earnings.pending;
+    const isStripeConnected = Boolean(earningsRaw.stripeConnected);
+    const stripePaidAmount = earningsRaw.stripePaid || earningsRaw.paid || 0;
 
     // Prepare chart data (fill missing days of the week)
     const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -85,6 +86,38 @@ export default function EarningsScreen() {
                 <Text style={styles.title}>Earnings</Text>
             </View>
 
+            {/* Stripe Connect Banner */}
+            {!isStripeConnected ? (
+                <TouchableOpacity
+                    style={styles.stripeBanner}
+                    onPress={() => router.push('/driver/payout-account')}
+                    activeOpacity={0.85}
+                >
+                    <View style={styles.stripeBannerIconBox}>
+                        <Ionicons name="card-outline" size={24} color="#000" />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                        <Text style={styles.stripeBannerTitle}>Connect Stripe Payouts</Text>
+                        <Text style={styles.stripeBannerSub}>
+                            Link your bank account to receive automatic per-delivery payouts.
+                        </Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={20} color="#000" />
+                </TouchableOpacity>
+            ) : (
+                <TouchableOpacity
+                    style={styles.stripeConnectedBadge}
+                    onPress={() => router.push('/driver/payout-account')}
+                    activeOpacity={0.8}
+                >
+                    <Ionicons name="shield-checkmark" size={18} color={Colors.success} />
+                    <Text style={styles.stripeConnectedText}>
+                        Direct Bank Payouts Active (Stripe)
+                    </Text>
+                    <Ionicons name="chevron-forward" size={16} color="#64748B" style={{ marginLeft: "auto" }} />
+                </TouchableOpacity>
+            )}
+
             {/* Balance Card */}
             <View style={styles.balanceCard}>
                 <View style={styles.balanceHeader}>
@@ -98,17 +131,7 @@ export default function EarningsScreen() {
                 <View style={styles.pendingContainer}>
                     <Ionicons name="checkmark-circle" size={16} color={Colors.success} />
                     <Text style={styles.pendingText}>
-                        {formatCurrency(earnings.paid)} received
-                    </Text>
-                </View>
-                <View style={styles.pendingContainer}>
-                    <Ionicons
-                        name={hasAdminDue ? "alert-circle" : "time"}
-                        size={16}
-                        color={Colors.warning}
-                    />
-                    <Text style={styles.pendingText}>
-                        {formatCurrency(settlementAmount)} {hasAdminDue ? 'you owe admin' : 'admin owes you'}
+                        {formatCurrency(stripePaidAmount)} directly transferred via Stripe
                     </Text>
                 </View>
             </View>
@@ -168,33 +191,30 @@ export default function EarningsScreen() {
                 <Text style={styles.sectionTitle}>Breakdown</Text>
                 <View style={styles.statsGrid}>
                     <View style={styles.statCard}>
-                        <Text style={styles.statLabel}>Received</Text>
-                        <Text style={styles.statValue}>{formatCurrency(earnings.paid)}</Text>
+                        <Text style={styles.statLabel}>Stripe Paid</Text>
+                        <Text style={styles.statValue}>{formatCurrency(stripePaidAmount)}</Text>
+                        <Text style={styles.statSubtext}>Direct to Bank</Text>
                     </View>
                     <View style={styles.statCard}>
-                        <Text style={styles.statLabel}>{settlementLabel}</Text>
-                        <Text
-                            style={[
-                                styles.statValue,
-                                hasAdminDue && styles.adminDueValue,
-                            ]}
-                        >
-                            {formatCurrency(settlementAmount)}
+                        <Text style={styles.statLabel}>Today</Text>
+                        <Text style={styles.statValue}>
+                            {formatCurrency(earnings.today)}
                         </Text>
+                        <Text style={styles.statSubtext}>Today&apos;s deliveries</Text>
                     </View>
                 </View>
                 <View style={styles.statsGrid}>
                     <View style={styles.statCard}>
-                        <Text style={styles.statLabel}>Cash Received</Text>
-                        <Text style={styles.statValue}>{formatCurrency(earnings.cashPaid)}</Text>
+                        <Text style={styles.statLabel}>This Week</Text>
+                        <Text style={styles.statValue}>{formatCurrency(earnings.week)}</Text>
+                        <Text style={styles.statSubtext}>Last 7 days</Text>
                     </View>
                     <View style={styles.statCard}>
-                        <Text style={styles.statLabel}>
-                            {selectedPeriod === 'week' ? 'This Week' : 'This Month'}
-                        </Text>
+                        <Text style={styles.statLabel}>This Month</Text>
                         <Text style={styles.statValue}>
-                            {formatCurrency(selectedPeriod === 'week' ? earnings.week : earnings.month)}
+                            {formatCurrency(earnings.month)}
                         </Text>
+                        <Text style={styles.statSubtext}>Current month</Text>
                     </View>
                 </View>
             </View>
@@ -406,5 +426,60 @@ const styles = StyleSheet.create({
     },
     transactionList: {
         backgroundColor: Colors.white,
+    },
+    stripeBanner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#DCFCE7',
+        marginHorizontal: 20,
+        marginTop: 16,
+        marginBottom: 0,
+        padding: 16,
+        borderRadius: 16,
+        borderWidth: 1.5,
+        borderColor: '#86EFAC',
+        gap: 12,
+    },
+    stripeBannerIconBox: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        backgroundColor: '#FFFFFF',
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
+    },
+    stripeBannerTitle: {
+        fontSize: 15,
+        fontWeight: '700',
+        color: '#166534',
+        marginBottom: 2,
+    },
+    stripeBannerSub: {
+        fontSize: 12,
+        color: '#15803D',
+        lineHeight: 16,
+    },
+    stripeConnectedBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: Colors.white,
+        marginHorizontal: 20,
+        marginTop: 16,
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: Colors.border,
+        gap: 8,
+    },
+    stripeConnectedText: {
+        fontSize: 13,
+        fontWeight: '600',
+        color: Colors.text,
     },
 });

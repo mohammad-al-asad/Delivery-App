@@ -6,6 +6,7 @@ import {
   buildDriverOnboardingStatus,
   normalizeVehicleType,
 } from "../../utils/driver-onboarding";
+import { StripeConnectService } from "../payment/stripe-connect.service";
 
 export class OrderService {
   constructor(private orderRepo: OrderRepository) {}
@@ -177,12 +178,30 @@ export class OrderService {
     return await this.orderRepo.assignRider(id, riderId);
   };
 
+  private stripeConnectService = new StripeConnectService();
+
   updateStatus = async (id: string, status: string) => {
-    return await this.orderRepo.updateOrderStatus(id, status);
+    const updated = await this.orderRepo.updateOrderStatus(id, status);
+    if (status === "Completed") {
+      try {
+        await this.stripeConnectService.transferDeliveryEarnings(id);
+      } catch (err) {
+        // Log and keep payoutStatus as Pending/Failed on order
+      }
+    }
+    return updated;
   };
 
   addCheckpoint = async (id: string, checkpoint: any) => {
-    return await this.orderRepo.addCheckpoint(id, checkpoint);
+    const updated = await this.orderRepo.addCheckpoint(id, checkpoint);
+    if (checkpoint.pointType === "dropoff" || (updated as any)?.status === "Completed") {
+      try {
+        await this.stripeConnectService.transferDeliveryEarnings(id);
+      } catch (err) {
+        // Log and keep payoutStatus as Pending/Failed on order
+      }
+    }
+    return updated;
   };
 
   submitCompletionProof = async (id: string, completionProof: string) => {

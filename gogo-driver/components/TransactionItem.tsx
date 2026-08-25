@@ -72,7 +72,7 @@ export function TransactionItem({ transaction, onPress }: TransactionItemProps) 
                     styles.amount,
                     { color: isNegative ? Colors.error : Colors.success }
                 ]}>
-                    {isNegative ? '-' : '+'}{formatCurrency(amount)}
+                    {isNegative ? '-' : '+'}{formatCurrency(Math.abs(amount))}
                 </Text>
             </View>
         </TouchableOpacity>

@@ -290,9 +290,12 @@ const Parameter = () => {
             </div>
           </div>
 
-          <div className="mt-8 p-4 bg-white/60 rounded-xl border border-white">
+          <div className="mt-8 p-4 bg-white/60 rounded-xl border border-white space-y-2">
             <p className="text-sm text-gray-600 leading-relaxed">
-              <span className="font-bold text-[#2D8C3C]">Note:</span> These parameters directly affect the checkout price for all customers. Changes are applied in real-time.
+              <span className="font-bold text-[#2D8C3C]">Real-Time Split Payouts:</span> Every delivery payment made online via Stripe is automatically split upon ride completion. The platform keeps the <b>{commissionPercent}% Admin Commission</b> and transfers the <b>{Math.max(0, 100 - (commissionPercent || 0))}% Driver Share</b> directly to the driver&apos;s linked Stripe account.
+            </p>
+            <p className="text-xs text-gray-500 italic">
+              Changes to pricing and commission percentages take effect immediately for all subsequent orders.
             </p>
           </div>
         </div>

@@ -51,8 +51,11 @@ export const orderRepository = new OrderRepository();
 export const orderService = new OrderService(orderRepository);
 export const orderController = new OrderController(orderService);
 
+import { StripeConnectService } from "./modules/payment/stripe-connect.service";
+
+export const stripeConnectService = new StripeConnectService();
 export const paymentService = new PaymentService();
-export const paymentController = new PaymentController(paymentService);
+export const paymentController = new PaymentController(paymentService, stripeConnectService);
 
 export const dashboardService = new DashboardService();
 export const dashboardController = new DashboardController(dashboardService);

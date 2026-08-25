@@ -340,6 +340,24 @@ export default function AccountScreen() {
 
           <TouchableOpacity
             style={styles.menuItem}
+            onPress={() => router.push("/driver/payout-account")}
+          >
+            <View style={[styles.menuIconCircle, { backgroundColor: "#F0FDF4" }]}>
+              <Ionicons name="card-outline" size={20} color="#2D8C3C" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.menuItemText}>Payout Account (Stripe)</Text>
+              <Text style={{ fontSize: 11, color: user?.payoutAccount?.status === "Connected" ? Colors.success : "#D97706" }}>
+                {user?.payoutAccount?.status === "Connected" ? "Direct Payouts Active" : "Setup Required"}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color="#CBD5E1" />
+          </TouchableOpacity>
+
+          <View style={styles.menuDivider} />
+
+          <TouchableOpacity
+            style={styles.menuItem}
             onPress={() => router.push("/driver/vehicle-info")}
           >
             <View style={[styles.menuIconCircle, { backgroundColor: "#F8FAFC" }]}>

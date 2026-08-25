@@ -65,7 +65,7 @@ export const driverApi = baseApi.injectEndpoints({
                 method: "PATCH",
                 body: { status: "Completed" },
             }),
-            invalidatesTags: ["orders"],
+            invalidatesTags: ["orders", "earnings"],
         }),
         getDailyStats: builder.query({
             query: () => "dashboard/rider",
@@ -106,6 +106,32 @@ export const driverApi = baseApi.injectEndpoints({
             }),
             invalidatesTags: ["orders"],
         }),
+
+        // Stripe Connect Payout Endpoints
+        getDriverStripeAccount: builder.query({
+            query: () => "payments/driver/stripe-account",
+            providesTags: ["user", "earnings"],
+        }),
+        createDriverStripeAccount: builder.mutation({
+            query: () => ({
+                url: "payments/driver/stripe-account",
+                method: "POST",
+            }),
+            invalidatesTags: ["user", "earnings"],
+        }),
+        getStripeOnboardingLink: builder.mutation({
+            query: (body = {}) => ({
+                url: "payments/driver/onboarding-link",
+                method: "POST",
+                body,
+            }),
+        }),
+        getStripeLoginLink: builder.mutation({
+            query: () => ({
+                url: "payments/driver/login-link",
+                method: "POST",
+            }),
+        }),
     }),
 });
 
@@ -126,4 +152,8 @@ export const {
     useGetOrderByIdQuery,
     useSubmitCompletionProofMutation,
     useMarkCheckpointMutation,
+    useGetDriverStripeAccountQuery,
+    useCreateDriverStripeAccountMutation,
+    useGetStripeOnboardingLinkMutation,
+    useGetStripeLoginLinkMutation,
 } = driverApi;

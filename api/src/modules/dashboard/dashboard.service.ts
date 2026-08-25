@@ -82,15 +82,24 @@ export class DashboardService {
     const cashPaidEarnings = orders
       .filter((order) => order.paymentMethod === "Cash")
       .reduce((sum, order) => sum + Number(order.price || 0), 0);
+    const stripeTransferredEarnings = orders
+      .filter(
+        (order) =>
+          order.paymentMethod === "Card" &&
+          (order.payoutStatus === "Transferred" || order.payoutStatus === "Paid")
+      )
+      .reduce((sum, order) => sum + getDriverEarnings(order), 0);
     const paidPayoutAmount = paidPayouts.reduce(
       (sum, payout) => sum + Number(payout.amount || 0),
       0
     );
-    const paidEarnings = cashPaidEarnings + paidPayoutAmount;
-    const pendingEarnings = totalEarnings - paidEarnings;
+    const paidEarnings = cashPaidEarnings + stripeTransferredEarnings + paidPayoutAmount;
+    const pendingEarnings = Math.max(0, totalEarnings - paidEarnings);
 
     const unsettledOrders = orders.filter(
-      (order: any) => order.settlementStatus !== "Settled"
+      (order: any) =>
+        order.settlementStatus !== "Settled" &&
+        order.payoutStatus !== "Transferred"
     );
     const cardPending = unsettledOrders
       .filter(
@@ -111,6 +120,7 @@ export class DashboardService {
       totalEarnings: roundMoney(totalEarnings),
       adminCommission: roundMoney(adminCommission),
       paidEarnings: roundMoney(paidEarnings),
+      stripeTransferredEarnings: roundMoney(stripeTransferredEarnings),
       cashPaidEarnings: roundMoney(cashPaidEarnings),
       pendingEarnings: roundMoney(pendingEarnings),
       payoutDue: roundMoney(payoutDue),
@@ -216,14 +226,27 @@ export class DashboardService {
     const cashPaidEarnings = completedRides
       .filter((ride) => ride.paymentMethod === "Cash")
       .reduce((sum, ride) => sum + Number(ride.price || 0), 0);
+    const stripeTransferredEarnings = completedRides
+      .filter(
+        (ride) =>
+          ride.paymentMethod === "Card" &&
+          (ride.payoutStatus === "Transferred" || ride.payoutStatus === "Paid")
+      )
+      .reduce((sum, ride) => sum + getDriverEarnings(ride), 0);
     const paidPayoutAmount = paidPayouts.reduce(
       (sum, payout) => sum + Number(payout.amount || 0),
       0
     );
-    const paidEarnings = cashPaidEarnings + paidPayoutAmount;
-    const pendingEarnings = totalEarnings - paidEarnings;
+    const paidEarnings = cashPaidEarnings + stripeTransferredEarnings + paidPayoutAmount;
+    const pendingEarnings = Math.max(0, totalEarnings - paidEarnings);
     const pendingSettlement = Math.max(pendingEarnings, 0);
     const adminDue = Math.max(-pendingEarnings, 0);
+
+    const rider = await User.findById(riderId).lean();
+    const isStripeConnected = Boolean(
+      rider?.payoutAccount?.status === "Connected" &&
+      rider?.payoutAccount?.payoutsEnabled
+    );
 
     // Prepare dailyTrend for last 7 days
     const dailyTrend: { date: string; amount: number }[] = [];
@@ -250,21 +273,26 @@ export class DashboardService {
       });
     }
 
-    const transactions = completedRides.map((ride) => ({
-      id: ride._id.toString(),
-      type: "ride",
-      amount: getDriverEarnings(ride),
-      status:
-        ride.paymentMethod === "Cash" || ride.payoutStatus === "Paid"
-          ? "completed"
-          : "pending",
-      date: ride.completedAt || ride.updatedAt || new Date(),
-      description:
-        ride.paymentMethod === "Cash"
-          ? `Cash received for ${ride.dropoff?.addressLine || "Destination"}`
+    const transactions = completedRides.map((ride) => {
+      const isTransferred = ride.payoutStatus === "Transferred" || ride.payoutStatus === "Paid";
+      const isCash = ride.paymentMethod === "Cash";
+      return {
+        id: ride._id.toString(),
+        type: "ride",
+        amount: getDriverEarnings(ride),
+        status: isCash || isTransferred ? "completed" : "pending",
+        date: ride.completedAt || ride.updatedAt || new Date(),
+        paymentMethod: ride.paymentMethod,
+        payoutStatus: ride.payoutStatus || "Pending",
+        stripeTransferId: ride.stripeTransferId,
+        description: isCash
+          ? `Cash collected for ${ride.dropoff?.addressLine || "Destination"}`
+          : isTransferred
+          ? `Stripe Payout for ${ride.dropoff?.addressLine || "Destination"}`
           : `Ride to ${ride.dropoff?.addressLine || "Destination"}`,
-      rideId: ride._id.toString(),
-    }));
+        rideId: ride._id.toString(),
+      };
+    });
 
     const payoutTransactions = paidPayouts.map((payout) => ({
       id: payout._id.toString(),
@@ -272,7 +300,7 @@ export class DashboardService {
       amount: Number(payout.amount || 0),
       status: "completed",
       date: payout.paidAt || payout.updatedAt || new Date(),
-      description: `Manual settlement ${payout.referenceId || ""}`.trim(),
+      description: `Direct payout ${payout.referenceId || ""}`.trim(),
     }));
 
     return {
@@ -281,10 +309,13 @@ export class DashboardService {
       week: weekEarnings,
       month: monthEarnings,
       paid: roundMoney(paidEarnings),
+      stripePaid: roundMoney(stripeTransferredEarnings),
       pending: roundMoney(pendingSettlement),
       adminDue: roundMoney(adminDue),
       settlementBalance: roundMoney(pendingEarnings),
       cashPaid: roundMoney(cashPaidEarnings),
+      stripeConnected: isStripeConnected,
+      payoutAccount: rider?.payoutAccount,
       dailyTrend,
       transactions: [...payoutTransactions, ...transactions].sort(
         (a: any, b: any) =>
@@ -501,6 +532,8 @@ export class DashboardService {
       totalEarnings: settlement.totalEarnings,
       adminCommission: settlement.adminCommission,
       paidEarnings: settlement.paidEarnings,
+      stripeTransferredEarnings: settlement.stripeTransferredEarnings,
+      cashPaidEarnings: settlement.cashPaidEarnings,
       pendingEarnings: settlement.pendingEarnings,
       payoutDue: settlement.payoutDue,
       lastPayoutDate: settlement.lastPayoutDate,

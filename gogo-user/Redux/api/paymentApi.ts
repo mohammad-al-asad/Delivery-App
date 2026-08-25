@@ -5,16 +5,6 @@ export type InitiatePaymentRequest = {
   amount?: number;
   currency?: string;
   description?: string;
-  redirectUrl?: string;
-  postUrl?: string;
-  sourceId?: string;
-  customer?: {
-    firstName?: string;
-    lastName?: string;
-    email?: string;
-    phoneCountryCode?: string;
-    phoneNumber?: string;
-  };
 };
 
 export type InitiatePaymentResponse = {
@@ -22,15 +12,21 @@ export type InitiatePaymentResponse = {
   message: string;
   data: {
     payment: any;
-    chargeId: string;
-    tapStatus: string;
-    transactionUrl: string;
-    response: any;
+    paymentIntentId: string;
+    clientSecret: string;
+    publishableKey?: string;
+    amount: number;
+    currency: string;
+    status: string;
+    chargeId?: string;
+    tapStatus?: string;
+    transactionUrl?: string;
   };
 };
 
 export type VerifyPaymentRequest = {
-  chargeId: string;
+  paymentIntentId?: string;
+  chargeId?: string;
 };
 
 export type VerifyPaymentResponse = {
@@ -38,8 +34,10 @@ export type VerifyPaymentResponse = {
   message: string;
   data: {
     payment: any;
-    tapStatus: string;
-    response: any;
+    status: string;
+    isPaid: boolean;
+    tapStatus?: string;
+    response?: any;
   };
 };
 
@@ -66,6 +64,14 @@ export const paymentApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["payments"],
     }),
+    createPaymentIntent: builder.mutation<InitiatePaymentResponse, InitiatePaymentRequest>({
+      query: (body) => ({
+        url: "payments/create-intent",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["payments"],
+    }),
     verifyPayment: builder.mutation<VerifyPaymentResponse, VerifyPaymentRequest>({
       query: (body) => ({
         url: "payments/verify",
@@ -80,6 +86,7 @@ export const paymentApi = baseApi.injectEndpoints({
 export const {
   useGetPaymentHistoryQuery,
   useInitiatePaymentMutation,
+  useCreatePaymentIntentMutation,
   useVerifyPaymentMutation,
 } = paymentApi;
 

@@ -1,19 +1,14 @@
 import Payment from "./payment.model";
 import Order from "../order/order.model";
+import Settings from "../common/settings.model";
+import { stripe, STRIPE_CURRENCY } from "../../config/stripe";
 import { apiError } from "../../errors/api-error";
 import { Errors } from "../../constants/error-codes";
 import { logger } from "../../utils/logger";
-import Settings from "../common/settings.model";
+import { StripeConnectService } from "./stripe-connect.service";
 
 export class PaymentService {
-  private getTapHeaders() {
-    const key = process.env.TAP_SECRET_KEY || "";
-    return {
-      "Authorization": `Bearer ${key}`,
-      "Content-Type": "application/json",
-      "accept": "application/json",
-    };
-  }
+  private stripeConnectService = new StripeConnectService();
 
   private async getPaymentSplit(amount: number) {
     const settingsDoc = await Settings.findOne().lean();
@@ -31,15 +26,15 @@ export class PaymentService {
     };
   }
 
+  /**
+   * Create a Stripe PaymentIntent for the user order checkout.
+   */
   initiatePayment = async (userId: string, body: any) => {
     const {
       orderId,
       amount,
-      currency = "AED",
-      description = "Ride Payment",
-      redirectUrl = "gogo://payment/callback",
-      postUrl = "https://gogo-backend-agsd.onrender.com/api/v1/payments/webhook/tap",
-      customer = {},
+      currency = STRIPE_CURRENCY,
+      description = "GOGO Delivery Payment",
     } = body;
 
     const order = await Order.findById(orderId);
@@ -56,163 +51,117 @@ export class PaymentService {
       ...split,
     });
 
-    const payload = {
-      amount: payableAmount,
-      currency,
-      threeDSecure: true,
-      save_card: false,
-      description,
-      statement_descriptor: "GOGO RIDE",
-      metadata: {
-        orderId,
-        userId,
-        adminCommissionPercent: String(split.adminCommissionPercent),
-        adminCommissionAmount: String(split.adminCommissionAmount),
-        driverEarningsAmount: String(split.driverEarningsAmount),
-      },
-      customer: {
-        first_name: customer.firstName || "Customer",
-        last_name: customer.lastName || "User",
-        email: customer.email || "customer@example.com",
-        phone: {
-          country_code: customer.phoneCountryCode || "971",
-          number: customer.phoneNumber || "000000000",
-        },
-      },
-      source: {
-        id: body.sourceId || "src_all",
-      },
-      redirect: {
-        url: redirectUrl,
-      },
-      post: {
-        url: postUrl,
-      },
-      platform: process.env.TAP_PLATFORM_ID
-        ? {
-            id: process.env.TAP_PLATFORM_ID,
-          }
-        : undefined,
-    };
+    const amountInCents = Math.round(payableAmount * 100);
 
     try {
-      const fetch = (await import("node-fetch")).default;
-      const response = await fetch("https://api.tap.company/v2/charges", {
-        method: "POST",
-        headers: this.getTapHeaders(),
-        body: JSON.stringify(payload),
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amountInCents,
+        currency: currency.toLowerCase(),
+        description,
+        metadata: {
+          orderId,
+          userId,
+          adminCommissionPercent: String(split.adminCommissionPercent),
+          adminCommissionAmount: String(split.adminCommissionAmount),
+          driverEarningsAmount: String(split.driverEarningsAmount),
+        },
+        automatic_payment_methods: {
+          enabled: true,
+        },
       });
 
-      const data: any = await response.json();
-      if (!response.ok || data.errors) {
-        logger.error(data, "Tap API Initiation Error");
-        // Fallback mock payment for development testing if keys are incorrect/invalid
-        const mockChargeId = `chg_mock_${Date.now()}`;
-        const payment = new Payment({
+      const payment = await Payment.findOneAndUpdate(
+        { order: orderId },
+        {
           user: userId,
           order: orderId,
-          chargeId: mockChargeId,
+          paymentIntentId: paymentIntent.id,
+          clientSecret: paymentIntent.client_secret,
           amount: payableAmount,
-          currency,
-          tapStatus: "Initiated",
+          currency: currency.toUpperCase(),
+          status: "Initiated",
+          payoutStatus: "NotReady",
           ...split,
-        });
-        await payment.save();
+        },
+        { upsert: true, new: true }
+      );
 
-        return {
-          payment,
-          chargeId: mockChargeId,
-          tapStatus: "Initiated",
-          transactionUrl: `${redirectUrl}?tap_id=${mockChargeId}`,
-          response: { mock: true },
-        };
-      }
-
-      const payment = new Payment({
-        user: userId,
-        order: orderId,
-        chargeId: data.id,
-        amount: data.amount,
-        currency: data.currency,
-        tapStatus: data.status,
-        ...split,
+      await Order.findByIdAndUpdate(orderId, {
+        stripePaymentIntentId: paymentIntent.id,
       });
-      await payment.save();
 
       return {
         payment,
-        chargeId: data.id,
-        tapStatus: data.status,
-        transactionUrl: data.transaction?.url,
-        response: data,
+        paymentIntentId: paymentIntent.id,
+        clientSecret: paymentIntent.client_secret,
+        publishableKey: process.env.STRIPE_PUBLISHABLE_KEY || "",
+        amount: payableAmount,
+        currency: currency.toUpperCase(),
+        status: paymentIntent.status,
       };
-    } catch (error) {
-      logger.error(error, "Error initiating payment");
-      throw error;
+    } catch (error: any) {
+      logger.error({ error, orderId }, "Stripe PaymentIntent Creation Error");
+      throw new apiError(
+        Errors.BadRequest.code,
+        error.message || "Failed to initiate Stripe payment"
+      );
     }
   };
 
-  verifyPayment = async (chargeId: string) => {
+  /**
+   * Verify and confirm Stripe PaymentIntent status.
+   */
+  verifyPayment = async (paymentIntentId: string) => {
     try {
-      let data: any;
-      if (chargeId.startsWith("chg_mock_")) {
-        data = {
-          id: chargeId,
-          status: "CAPTURED",
-          metadata: {},
-        };
-      } else {
-        const fetch = (await import("node-fetch")).default;
-        const response = await fetch(`https://api.tap.company/v2/charges/${chargeId}`, {
-          method: "GET",
-          headers: this.getTapHeaders(),
-        });
-        data = await response.json();
-        if (!response.ok) {
-          throw new apiError(Errors.BadRequest.code, "Failed to verify charge with Tap");
-        }
+      const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+      if (!paymentIntent) {
+        throw new apiError(Errors.NotFound.code, "Payment intent not found on Stripe");
       }
 
-      const payment = await Payment.findOne({ chargeId });
+      const payment = await Payment.findOne({
+        $or: [{ paymentIntentId }, { chargeId: paymentIntentId }],
+      });
+
       if (!payment) {
-        throw new apiError(Errors.NotFound.code, "Payment transaction not found");
+        throw new apiError(Errors.NotFound.code, "Payment transaction record not found");
       }
 
-      payment.tapStatus = data.status;
+      const isSucceeded = paymentIntent.status === "succeeded";
+      payment.status = isSucceeded ? "Succeeded" : "RequiresAction";
+      payment.tapStatus = isSucceeded ? "CAPTURED" : paymentIntent.status;
       await payment.save();
 
-      if (data.status === "CAPTURED") {
+      if (isSucceeded) {
         const split = await this.getPaymentSplit(payment.amount);
         await Order.findByIdAndUpdate(payment.order, {
           paymentStatus: "Paid",
           ...split,
         });
-        payment.adminCommissionPercent = split.adminCommissionPercent;
-        payment.adminCommissionAmount = split.adminCommissionAmount;
-        payment.driverEarningsAmount = split.driverEarningsAmount;
-        payment.payoutStatus = "NotReady";
-        await payment.save();
       }
 
       return {
         payment,
-        tapStatus: data.status,
-        response: data,
+        status: paymentIntent.status,
+        isPaid: isSucceeded,
+        tapStatus: isSucceeded ? "CAPTURED" : paymentIntent.status,
       };
-    } catch (error) {
-      logger.error(error, "Error verifying payment");
+    } catch (error: any) {
+      logger.error({ error, paymentIntentId }, "Error verifying Stripe payment");
       throw error;
     }
   };
 
+  /**
+   * Get user payment history.
+   */
   getPaymentHistory = async (userId: string, query: any) => {
-    const page = query.page || 1;
-    const limit = query.limit || 20;
+    const page = Number(query.page) || 1;
+    const limit = Number(query.limit) || 20;
     const skip = (page - 1) * limit;
 
     const filter: any = { user: userId };
     if (query.status) {
-      filter.tapStatus = query.status;
+      filter.status = query.status;
     }
 
     const [payments, total] = await Promise.all([
@@ -228,28 +177,51 @@ export class PaymentService {
     return { data: payments, total };
   };
 
-  handleWebhook = async (webhookPayload: any) => {
-    logger.info(webhookPayload, "Tap Payment Webhook Payload Received");
-    const chargeId = webhookPayload.id;
-    if (!chargeId) return;
+  /**
+   * Handle incoming Stripe webhooks.
+   */
+  handleWebhook = async (rawBody: any, signature?: string) => {
+    let event: any = rawBody;
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
-    const payment = await Payment.findOne({ chargeId });
-    if (!payment) return;
+    if (webhookSecret && signature) {
+      try {
+        event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
+      } catch (err: any) {
+        logger.error({ err }, "Stripe Webhook Signature Verification Failed");
+        throw new apiError(Errors.BadRequest.code, `Webhook signature verification failed: ${err.message}`);
+      }
+    }
 
-    payment.tapStatus = webhookPayload.status;
-    await payment.save();
+    logger.info({ eventType: event.type }, "Stripe Webhook Event Received");
 
-    if (webhookPayload.status === "CAPTURED") {
-      const split = await this.getPaymentSplit(payment.amount);
-      await Order.findByIdAndUpdate(payment.order, {
-        paymentStatus: "Paid",
-        ...split,
-      });
-      payment.adminCommissionPercent = split.adminCommissionPercent;
-      payment.adminCommissionAmount = split.adminCommissionAmount;
-      payment.driverEarningsAmount = split.driverEarningsAmount;
-      payment.payoutStatus = "NotReady";
-      await payment.save();
+    switch (event.type) {
+      case "payment_intent.succeeded": {
+        const paymentIntent = event.data.object;
+        const payment = await Payment.findOne({ paymentIntentId: paymentIntent.id });
+        if (payment) {
+          payment.status = "Succeeded";
+          payment.tapStatus = "CAPTURED";
+          await payment.save();
+
+          const split = await this.getPaymentSplit(payment.amount);
+          await Order.findByIdAndUpdate(payment.order, {
+            paymentStatus: "Paid",
+            ...split,
+          });
+        }
+        break;
+      }
+      case "account.updated": {
+        const account = event.data.object;
+        const driverId = account.metadata?.driverId;
+        if (driverId) {
+          await this.stripeConnectService.syncAccountStatus(driverId);
+        }
+        break;
+      }
+      default:
+        break;
     }
   };
 }

@@ -12,10 +12,16 @@ const paymentSchema = new Schema(
       ref: "Order",
       required: true,
     },
+    paymentIntentId: {
+      type: String,
+      unique: true,
+      sparse: true,
+      index: true,
+    },
+    clientSecret: String,
     chargeId: {
       type: String,
-      required: true,
-      unique: true,
+      sparse: true,
       index: true,
     },
     amount: {
@@ -26,9 +32,13 @@ const paymentSchema = new Schema(
       type: String,
       default: "AED",
     },
+    status: {
+      type: String,
+      enum: ["Initiated", "RequiresAction", "Succeeded", "Failed", "Canceled", "Refunded"],
+      default: "Initiated",
+    },
     tapStatus: {
       type: String,
-      default: "Initiated",
     },
     adminCommissionPercent: {
       type: Number,
@@ -42,11 +52,17 @@ const paymentSchema = new Schema(
       type: Number,
       default: 0,
     },
+    stripeTransferId: {
+      type: String,
+      index: true,
+    },
     payoutStatus: {
       type: String,
-      enum: ["NotReady", "Pending", "Paid", "Failed"],
+      enum: ["NotReady", "Pending", "Transferred", "Paid", "Failed"],
       default: "NotReady",
     },
+    transferredAt: Date,
+    transferError: String,
   },
   {
     timestamps: true,
