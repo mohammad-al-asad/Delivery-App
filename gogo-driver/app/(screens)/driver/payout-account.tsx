@@ -1,10 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
-import * as WebBrowser from "expo-web-browser";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Modal,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -12,6 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { WebView } from "react-native-webview";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Colors } from "../../../constants/Colors";
 import {
@@ -25,6 +26,7 @@ export default function PayoutAccountScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [onboardingUrl, setOnboardingUrl] = useState<string | null>(null);
 
   const {
     data: profileData,
@@ -58,13 +60,8 @@ export default function PayoutAccountScreen() {
     try {
       const res = await getOnboardingLink({}).unwrap();
       if (res?.data?.url) {
-        // Open Stripe Express onboarding in secure browser session
-        const result = await WebBrowser.openAuthSessionAsync(
-          res.data.url,
-          "gogodriver://stripe-connect"
-        );
-        // Refresh account status once user returns
-        await handleRefresh();
+        // Open Stripe Express onboarding inside in-app WebView
+        setOnboardingUrl(res.data.url);
       } else {
         Alert.alert("Error", "Could not generate Stripe onboarding link.");
       }
@@ -83,7 +80,7 @@ export default function PayoutAccountScreen() {
     try {
       const res = await getLoginLink({}).unwrap();
       if (res?.data?.url) {
-        await WebBrowser.openBrowserAsync(res.data.url);
+        setOnboardingUrl(res.data.url);
       } else {
         Alert.alert("Error", "Could not generate Stripe dashboard link.");
       }
@@ -312,6 +309,74 @@ export default function PayoutAccountScreen() {
           </Text>
         </View>
       </ScrollView>
+
+      {/* Stripe In-App WebView Modal */}
+      <Modal
+        visible={Boolean(onboardingUrl)}
+        animationType="slide"
+        onRequestClose={() => {
+          setOnboardingUrl(null);
+          handleRefresh();
+        }}
+      >
+        <View style={[styles.webViewContainer, { paddingTop: insets.top }]}>
+          <View style={styles.webViewHeader}>
+            <Text style={styles.webViewTitle}>Stripe Payout Setup</Text>
+            <TouchableOpacity
+              onPress={() => {
+                setOnboardingUrl(null);
+                handleRefresh();
+              }}
+              style={styles.webViewCloseButton}
+            >
+              <Ionicons name="close" size={24} color={Colors.text} />
+            </TouchableOpacity>
+          </View>
+          {onboardingUrl && (
+            <WebView
+              source={{ uri: onboardingUrl }}
+              onShouldStartLoadWithRequest={(request) => {
+                const url = request.url;
+                if (
+                  url.includes("stripe-connect/return") ||
+                  url.includes("stripe-connect/success") ||
+                  url.startsWith("gogodriver://")
+                ) {
+                  setOnboardingUrl(null);
+                  handleRefresh();
+                  Alert.alert(
+                    "Setup Completed",
+                    "Your Stripe payout account details were submitted. Refreshing your status..."
+                  );
+                  return false;
+                }
+                return true;
+              }}
+              onNavigationStateChange={(navState) => {
+                const url = navState.url;
+                if (
+                  url.includes("stripe-connect/return") ||
+                  url.includes("stripe-connect/success") ||
+                  url.startsWith("gogodriver://")
+                ) {
+                  setOnboardingUrl(null);
+                  handleRefresh();
+                  Alert.alert(
+                    "Setup Completed",
+                    "Your Stripe payout account details were submitted. Refreshing your status..."
+                  );
+                }
+              }}
+              startInLoadingState={true}
+              renderLoading={() => (
+                <View style={styles.webViewLoading}>
+                  <ActivityIndicator size="large" color={Colors.primary} />
+                </View>
+              )}
+            />
+          )}
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -340,6 +405,36 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "700",
     color: Colors.text,
+  },
+  webViewContainer: {
+    flex: 1,
+    backgroundColor: "#fff",
+  },
+  webViewHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    backgroundColor: Colors.white,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  webViewTitle: {
+    fontSize: 17,
+    fontWeight: "700",
+    color: Colors.text,
+  },
+  webViewCloseButton: {
+    padding: 6,
+    borderRadius: 20,
+    backgroundColor: "#F1F5F9",
+  },
+  webViewLoading: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "#fff",
+    alignItems: "center",
+    justifyContent: "center",
   },
   scrollView: {
     flex: 1,

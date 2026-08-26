@@ -33,6 +33,10 @@ const moduleRoutes = [
     router: paymentRoute,
   },
   {
+    path: "/payment",
+    router: paymentRoute,
+  },
+  {
     path: "/dashboard",
     router: dashboardRoute,
   },

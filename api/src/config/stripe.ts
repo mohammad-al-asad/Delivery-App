@@ -17,7 +17,7 @@ const isValidHttpUrl = (url?: string) => Boolean(url && /^https?:\/\//i.test(url
 export const STRIPE_CURRENCY = (process.env.STRIPE_CURRENCY || "aed").toLowerCase();
 export const STRIPE_CONNECT_RETURN_URL = isValidHttpUrl(process.env.STRIPE_CONNECT_RETURN_URL)
   ? process.env.STRIPE_CONNECT_RETURN_URL!
-  : "https://gogo-backend.onrender.com/api/v1/payment/stripe-connect/return";
+  : "https://gogo-backend.onrender.com/api/v1/payments/stripe-connect/return";
 export const STRIPE_CONNECT_REFRESH_URL = isValidHttpUrl(process.env.STRIPE_CONNECT_REFRESH_URL)
   ? process.env.STRIPE_CONNECT_REFRESH_URL!
-  : "https://gogo-backend.onrender.com/api/v1/payment/stripe-connect/refresh";
+  : "https://gogo-backend.onrender.com/api/v1/payments/stripe-connect/refresh";
