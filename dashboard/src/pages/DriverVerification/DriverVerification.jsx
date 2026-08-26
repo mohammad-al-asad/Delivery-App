@@ -19,6 +19,7 @@ const checks = [
   ["vehicleInfoSubmitted", "Vehicle"],
   ["documentsUploaded", "Documents"],
   ["adminApproved", "Approval"],
+  ["stripeConnected", "Stripe"],
 ];
 
 const getRiders = (payload) => {

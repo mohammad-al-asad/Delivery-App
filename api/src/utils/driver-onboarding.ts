@@ -22,17 +22,23 @@ export const buildDriverOnboardingStatus = (driver: any) => {
     driver?.emaratesId && driver?.drivingLicense && driver?.vehicleRegistration
   );
   const adminApproved = driver?.status === "Approved";
+  const stripeConnected = Boolean(
+    driver?.payoutAccount?.status === "Connected" &&
+    driver?.payoutAccount?.payoutsEnabled
+  );
 
   const checks = {
     vehicleInfoSubmitted,
     documentsUploaded,
     adminApproved,
+    stripeConnected,
   };
 
   const missingRequirements = [
     !vehicleInfoSubmitted ? "Vehicle information submitted" : null,
     !documentsUploaded ? "Required documents uploaded" : null,
     !adminApproved ? "Driver account approved by admin" : null,
+    !stripeConnected ? "Stripe payout account connected & active" : null,
   ].filter(Boolean) as string[];
 
   return {
@@ -41,3 +47,4 @@ export const buildDriverOnboardingStatus = (driver: any) => {
     canGoOnline: missingRequirements.length === 0,
   };
 };
+

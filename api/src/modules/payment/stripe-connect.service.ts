@@ -34,11 +34,11 @@ export class StripeConnectService {
       const nameParts = [driver.firstName, driver.lastName].filter(Boolean);
       const businessProfileName = nameParts.length ? nameParts.join(" ") : driver.name || "GOGO Driver";
 
-      const account = await stripe.accounts.create({
+      const country = driver.payoutAccount?.country || "AE";
+      const accountCreateParams: any = {
         type: "express",
-        country: driver.payoutAccount?.country || "AE",
+        country,
         email: driver.email,
-        business_type: "individual",
         capabilities: {
           transfers: { requested: true },
         },
@@ -50,7 +50,14 @@ export class StripeConnectService {
           driverId: driver._id.toString(),
           email: driver.email,
         },
-      });
+      };
+
+      // Only specify business_type if not AE (Stripe AE requires company/sole establishment)
+      if (country !== "AE") {
+        accountCreateParams.business_type = "individual";
+      }
+
+      const account = await stripe.accounts.create(accountCreateParams);
 
       driver.payoutAccount = {
         provider: "Stripe",

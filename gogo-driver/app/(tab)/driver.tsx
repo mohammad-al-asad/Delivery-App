@@ -66,6 +66,11 @@ export default function DriverHomeScreen() {
       key: "adminApproved",
       label: "Admin approval completed",
     },
+    {
+      key: "stripeConnected",
+      label: "Stripe payout account setup",
+      route: "/driver/payout-account",
+    },
   ];
   const statsRaw = statsData?.data || {};
   const stats = {

@@ -9,7 +9,6 @@ import {
   MdList,
   MdTune,
   MdOutlineVerifiedUser,
-  MdOutlinePayments,
 } from "react-icons/md";
 import { FaFireAlt } from "react-icons/fa";
 import { BiSupport } from "react-icons/bi";
@@ -19,7 +18,6 @@ const navItems = [
   { path: "/user-details", label: "User Management", icon: LuUsers },
   { path: "/driver-verification", label: "Driver Verification", icon: MdOutlineVerifiedUser },
   { path: "/earnings", label: "Payments", icon: MdOutlineInventory2 },
-  { path: "/driver-payouts", label: "Driver Settlements", icon: MdOutlinePayments },
   { path: "/order-management", label: "Order Management", icon: MdList },
   { path: "/parameter", label: "Parameter", icon: MdTune },
   { path: "/hot-area", label: "Hot Area", icon: FaFireAlt },

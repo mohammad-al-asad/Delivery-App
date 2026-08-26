@@ -17,7 +17,6 @@ import ChangePass from "../pages/profile/ChangePass";
 import AboutUs from "../pages/optional/AboutUs";
 import EditProfile from "../pages/profile/EditProfile";
 import Earnings from "../pages/Earnings/Earnings";
-import DriverPayouts from "../pages/DriverPayouts/DriverPayouts";
 import Listing from "../pages/Listing/Listing";
 import RiderManagement from "../pages/RiderManagement/RiderManagement";
 import DriverVerification from "../pages/DriverVerification/DriverVerification";
@@ -75,10 +74,6 @@ const router = createBrowserRouter([
           {
             path: "earnings",
             element: <Earnings />,
-          },
-          {
-            path: "driver-payouts",
-            element: <DriverPayouts />,
           },
           {
             path: "order-management",
