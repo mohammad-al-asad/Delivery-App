@@ -12,8 +12,12 @@ export const stripe = new Stripe(stripeSecretKey || "sk_test_placeholder", {
   typescript: true,
 });
 
+const isValidHttpUrl = (url?: string) => Boolean(url && /^https?:\/\//i.test(url));
+
 export const STRIPE_CURRENCY = (process.env.STRIPE_CURRENCY || "aed").toLowerCase();
-export const STRIPE_CONNECT_RETURN_URL =
-  process.env.STRIPE_CONNECT_RETURN_URL || "https://gogo-backend.onrender.com/api/v1/payment/stripe-connect/return";
-export const STRIPE_CONNECT_REFRESH_URL =
-  process.env.STRIPE_CONNECT_REFRESH_URL || "https://gogo-backend.onrender.com/api/v1/payment/stripe-connect/refresh";
+export const STRIPE_CONNECT_RETURN_URL = isValidHttpUrl(process.env.STRIPE_CONNECT_RETURN_URL)
+  ? process.env.STRIPE_CONNECT_RETURN_URL!
+  : "https://gogo-backend.onrender.com/api/v1/payment/stripe-connect/return";
+export const STRIPE_CONNECT_REFRESH_URL = isValidHttpUrl(process.env.STRIPE_CONNECT_REFRESH_URL)
+  ? process.env.STRIPE_CONNECT_REFRESH_URL!
+  : "https://gogo-backend.onrender.com/api/v1/payment/stripe-connect/refresh";
