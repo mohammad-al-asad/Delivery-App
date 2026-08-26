@@ -345,10 +345,22 @@ export default function AccountScreen() {
             <View style={[styles.menuIconCircle, { backgroundColor: "#F0FDF4" }]}>
               <Ionicons name="card-outline" size={20} color="#2D8C3C" />
             </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.menuItemText}>Payout Account (Stripe)</Text>
-              <Text style={{ fontSize: 11, color: user?.payoutAccount?.status === "Connected" ? Colors.success : "#D97706" }}>
-                {user?.payoutAccount?.status === "Connected" ? "Direct Payouts Active" : "Setup Required"}
+            <View style={styles.menuTextContainer}>
+              <Text style={styles.menuTitleText}>Payout Account (Stripe)</Text>
+              <Text
+                style={[
+                  styles.menuSubtitleText,
+                  {
+                    color:
+                      user?.payoutAccount?.status === "Connected"
+                        ? "#16A34A"
+                        : "#D97706",
+                  },
+                ]}
+              >
+                {user?.payoutAccount?.status === "Connected"
+                  ? "Direct Payouts Active"
+                  : "Setup Required"}
               </Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color="#CBD5E1" />
@@ -793,6 +805,21 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#0F172A",
     marginLeft: 16,
+  },
+  menuTextContainer: {
+    flex: 1,
+    marginLeft: 16,
+    justifyContent: "center",
+  },
+  menuTitleText: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#0F172A",
+  },
+  menuSubtitleText: {
+    fontSize: 12,
+    fontWeight: "600",
+    marginTop: 2,
   },
   menuDivider: {
     height: 1,

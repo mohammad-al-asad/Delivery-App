@@ -1,14 +1,47 @@
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useAppDispatch, useAppSelector } from '../../../Redux/hooks';
-import { setSelectedVehicle, swapPickupAndDropoff } from '../../../Redux/Slice/orderDraftSlice';
+import { setSelectedVehicle, setRouteEstimate, swapPickupAndDropoff } from '../../../Redux/Slice/orderDraftSlice';
 import { useEstimateOrderPriceQuery } from '../../../Redux/api/orderApi';
 import { Colors } from '../../../constants/Colors';
 
 const STEPS = ['Locations', 'Vehicle', 'Checkout', 'Payment'];
+const GOOGLE_PLACES_API_KEY = process.env.EXPO_PUBLIC_MAP_API_KEY;
+
+type LatLng = {
+    latitude: number;
+    longitude: number;
+};
+
+const formatCoordinate = (coordinate: LatLng) =>
+    `${coordinate.latitude},${coordinate.longitude}`;
+
+const calculateHaversineDistanceKm = (coords: LatLng[]): number => {
+    if (coords.length < 2) return 5.0;
+    let total = 0;
+    const toRad = (v: number) => (v * Math.PI) / 180;
+    for (let i = 0; i < coords.length - 1; i++) {
+        const lat1 = coords[i].latitude;
+        const lon1 = coords[i].longitude;
+        const lat2 = coords[i + 1].latitude;
+        const lon2 = coords[i + 1].longitude;
+        const R = 6371;
+        const dLat = toRad(lat2 - lat1);
+        const dLon = toRad(lon2 - lon1);
+        const a =
+            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(toRad(lat1)) *
+            Math.cos(toRad(lat2)) *
+            Math.sin(dLon / 2) *
+            Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        total += R * c;
+    }
+    return Math.max(1.0, Number((total * 1.3).toFixed(2)));
+};
 
 const VEHICLES = [
     {
@@ -56,6 +89,105 @@ export default function VehicleSelectionScreen() {
         routeDurationMin,
     } = useAppSelector((state) => state.orderDraft);
 
+    const [isCalculatingRoute, setIsCalculatingRoute] = useState(false);
+
+    const mapCoordinates = useMemo(() => {
+        const points: LatLng[] = [];
+        if (pickup?.coordinate) {
+            points.push(pickup.coordinate);
+        }
+        stops.forEach((stop) => {
+            if (stop.coordinate) {
+                points.push(stop.coordinate);
+            }
+        });
+        if (dropoff?.coordinate) {
+            points.push(dropoff.coordinate);
+        }
+        return points;
+    }, [pickup?.coordinate, stops, dropoff?.coordinate]);
+
+    const routePointKey = mapCoordinates.map(formatCoordinate).join(';');
+
+    useEffect(() => {
+        if (mapCoordinates.length < 2) {
+            if (pickup?.address && dropoff?.address && routeDistanceKm == null) {
+                dispatch(setRouteEstimate({ distanceKm: 5.0, durationMin: 15 }));
+            }
+            return;
+        }
+
+        const controller = new AbortController();
+
+        const calculateRoute = async () => {
+            setIsCalculatingRoute(true);
+            try {
+                if (GOOGLE_PLACES_API_KEY) {
+                    const origin = mapCoordinates[0];
+                    const destination = mapCoordinates[mapCoordinates.length - 1];
+                    const waypoints = mapCoordinates.slice(1, -1);
+                    const params = new URLSearchParams({
+                        origin: formatCoordinate(origin),
+                        destination: formatCoordinate(destination),
+                        key: GOOGLE_PLACES_API_KEY,
+                        mode: 'driving',
+                    });
+
+                    if (waypoints.length > 0) {
+                        params.set('waypoints', waypoints.map(formatCoordinate).join('|'));
+                    }
+
+                    const response = await fetch(
+                        `https://maps.googleapis.com/maps/api/directions/json?${params.toString()}`,
+                        { signal: controller.signal }
+                    );
+                    const result = await response.json();
+                    if (result?.status === 'OK' && result?.routes?.[0]) {
+                        const route = result.routes[0];
+                        const distanceMeters = route.legs?.reduce(
+                            (total: number, leg: any) => total + (leg.distance?.value || 0),
+                            0
+                        ) || 0;
+                        const durationSeconds = route.legs?.reduce(
+                            (total: number, leg: any) => total + (leg.duration?.value || 0),
+                            0
+                        ) || 0;
+
+                        if (distanceMeters > 0) {
+                            dispatch(setRouteEstimate({
+                                distanceKm: Number((distanceMeters / 1000).toFixed(2)),
+                                durationMin: Math.ceil(durationSeconds / 60) || 10,
+                            }));
+                            return;
+                        }
+                    }
+                }
+
+                const fallbackDistance = calculateHaversineDistanceKm(mapCoordinates);
+                const fallbackDuration = Math.ceil(fallbackDistance * 2.5);
+                dispatch(setRouteEstimate({
+                    distanceKm: fallbackDistance,
+                    durationMin: fallbackDuration,
+                }));
+            } catch (error: any) {
+                if (error?.name !== 'AbortError') {
+                    const fallbackDistance = calculateHaversineDistanceKm(mapCoordinates);
+                    const fallbackDuration = Math.ceil(fallbackDistance * 2.5);
+                    dispatch(setRouteEstimate({
+                        distanceKm: fallbackDistance,
+                        durationMin: fallbackDuration,
+                    }));
+                }
+            } finally {
+                setIsCalculatingRoute(false);
+            }
+        };
+
+        calculateRoute();
+
+        return () => controller.abort();
+    }, [dispatch, mapCoordinates, routePointKey, pickup?.address, dropoff?.address]);
+
     const { data: bikeEstimate, isFetching: isBikeFetching } = useEstimateOrderPriceQuery({
         distanceKm: routeDistanceKm ?? 0,
         durationMin: routeDurationMin ?? 0,
@@ -75,14 +207,14 @@ export default function VehicleSelectionScreen() {
     }, { skip: routeDistanceKm == null });
 
     const getVehiclePrice = (vehicleId: string) => {
-        if (routeDistanceKm == null) return 'Calculating...';
+        if (routeDistanceKm == null || isCalculatingRoute) return 'Calculating...';
         switch (vehicleId) {
             case 'bike':
-                return isBikeFetching ? 'Calculating...' : bikeEstimate?.data?.price ? `${bikeEstimate.data.price.toFixed(2)}` : 'N/A';
+                return isBikeFetching ? 'Calculating...' : bikeEstimate?.data?.price != null ? `${bikeEstimate.data.price.toFixed(2)}` : 'N/A';
             case 'car':
-                return isCarFetching ? 'Calculating...' : carEstimate?.data?.price ? `${carEstimate.data.price.toFixed(2)}` : 'N/A';
+                return isCarFetching ? 'Calculating...' : carEstimate?.data?.price != null ? `${carEstimate.data.price.toFixed(2)}` : 'N/A';
             case 'truck':
-                return isTruckFetching ? 'Calculating...' : truckEstimate?.data?.price ? `${truckEstimate.data.price.toFixed(2)}` : 'N/A';
+                return isTruckFetching ? 'Calculating...' : truckEstimate?.data?.price != null ? `${truckEstimate.data.price.toFixed(2)}` : 'N/A';
             default:
                 return '—';
         }

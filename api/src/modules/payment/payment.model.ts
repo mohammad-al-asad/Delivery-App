@@ -21,8 +21,6 @@ const paymentSchema = new Schema(
     clientSecret: String,
     chargeId: {
       type: String,
-      sparse: true,
-      index: true,
     },
     amount: {
       type: Number,
