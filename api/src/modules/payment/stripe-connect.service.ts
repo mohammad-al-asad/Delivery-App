@@ -42,6 +42,9 @@ export class StripeConnectService {
         capabilities: {
           transfers: { requested: true },
         },
+        tos_acceptance: {
+          service_agreement: "recipient",
+        },
         business_profile: {
           name: businessProfileName,
           product_description: "Delivery and Ride driver partner on GOGO",
