@@ -96,11 +96,15 @@ export class StripeConnectService {
   generateOnboardingLink = async (driverId: string, customReturnUrl?: string, customRefreshUrl?: string) => {
     const { stripeAccountId } = await this.getOrCreateConnectedAccount(driverId);
 
+    const isValidHttpUrl = (url?: string) => Boolean(url && /^https?:\/\//i.test(url));
+    const returnUrl = isValidHttpUrl(customReturnUrl) ? customReturnUrl! : STRIPE_CONNECT_RETURN_URL;
+    const refreshUrl = isValidHttpUrl(customRefreshUrl) ? customRefreshUrl! : STRIPE_CONNECT_REFRESH_URL;
+
     try {
       const accountLink = await stripe.accountLinks.create({
         account: stripeAccountId,
-        refresh_url: customRefreshUrl || STRIPE_CONNECT_REFRESH_URL,
-        return_url: customReturnUrl || STRIPE_CONNECT_RETURN_URL,
+        refresh_url: refreshUrl,
+        return_url: returnUrl,
         type: "account_onboarding",
       });
 

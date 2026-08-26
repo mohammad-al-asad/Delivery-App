@@ -3,9 +3,11 @@ import { authMiddleware, paymentController } from "../../container";
 
 const paymentRoute = Router();
 
-// Public Webhooks
+// Public Webhooks & Redirects
 paymentRoute.post("/webhook/stripe", paymentController.webhook);
 paymentRoute.post("/webhook/tap", paymentController.webhook);
+paymentRoute.get("/stripe-connect/return", paymentController.handleConnectReturn);
+paymentRoute.get("/stripe-connect/refresh", paymentController.handleConnectRefresh);
 
 // Authenticated Routes
 paymentRoute.use(authMiddleware.authenticate);

@@ -129,4 +129,74 @@ export class PaymentController {
       });
     }
   );
+
+  handleConnectReturn = (req: Request, res: Response) => {
+    res.setHeader("Content-Type", "text/html");
+    res.send(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>GOGO Driver - Payout Setup</title>
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; background: #F8FAFC; color: #1E293B; text-align: center; padding: 20px; box-sizing: border-box; }
+          .card { background: white; padding: 32px; border-radius: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); max-width: 400px; width: 100%; }
+          .icon { width: 64px; height: 64px; background: #DCFCE7; color: #16A34A; border-radius: 32px; display: flex; align-items: center; justify-content: center; font-size: 32px; margin: 0 auto 16px; }
+          h1 { font-size: 20px; margin: 0 0 8px; color: #0F172A; }
+          p { font-size: 14px; color: #64748B; margin: 0 0 24px; line-height: 1.5; }
+          .btn { display: inline-block; background: #2D8C3C; color: white; text-decoration: none; padding: 14px 28px; border-radius: 12px; font-weight: 700; font-size: 15px; }
+        </style>
+      </head>
+      <body>
+        <div class="card">
+          <div class="icon">✓</div>
+          <h1>Payout Setup Complete!</h1>
+          <p>Your Stripe account has been processed. You can now return to the GOGO Driver app to start receiving deliveries.</p>
+          <a class="btn" href="gogodriver://stripe-connect/success">Return to GOGO Driver App</a>
+        </div>
+        <script>
+          setTimeout(function() {
+            window.location.href = "gogodriver://stripe-connect/success";
+          }, 800);
+        </script>
+      </body>
+      </html>
+    `);
+  };
+
+  handleConnectRefresh = (req: Request, res: Response) => {
+    res.setHeader("Content-Type", "text/html");
+    res.send(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>GOGO Driver - Refresh Setup</title>
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; background: #F8FAFC; color: #1E293B; text-align: center; padding: 20px; box-sizing: border-box; }
+          .card { background: white; padding: 32px; border-radius: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); max-width: 400px; width: 100%; }
+          .icon { width: 64px; height: 64px; background: #FEF3C7; color: #D97706; border-radius: 32px; display: flex; align-items: center; justify-content: center; font-size: 32px; margin: 0 auto 16px; }
+          h1 { font-size: 20px; margin: 0 0 8px; color: #0F172A; }
+          p { font-size: 14px; color: #64748B; margin: 0 0 24px; line-height: 1.5; }
+          .btn { display: inline-block; background: #2D8C3C; color: white; text-decoration: none; padding: 14px 28px; border-radius: 12px; font-weight: 700; font-size: 15px; }
+        </style>
+      </head>
+      <body>
+        <div class="card">
+          <div class="icon">↻</div>
+          <h1>Session Expired</h1>
+          <p>Please return to the GOGO Driver app to generate a fresh link.</p>
+          <a class="btn" href="gogodriver://stripe-connect/refresh">Return to GOGO Driver App</a>
+        </div>
+        <script>
+          setTimeout(function() {
+            window.location.href = "gogodriver://stripe-connect/refresh";
+          }, 800);
+        </script>
+      </body>
+      </html>
+    `);
+  };
 }
