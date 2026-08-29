@@ -109,15 +109,20 @@ export default function VehicleSelectionScreen() {
 
     const routePointKey = mapCoordinates.map(formatCoordinate).join(';');
 
+    // Calculate route distance & duration whenever locations change
     useEffect(() => {
+        // No locations yet – nothing to calculate
+        if (!pickup?.address || !dropoff?.address) return;
+
+        // If we don't have valid coordinates for at least 2 points,
+        // immediately use a sensible default so prices can load.
         if (mapCoordinates.length < 2) {
-            if (pickup?.address && dropoff?.address && routeDistanceKm == null) {
-                dispatch(setRouteEstimate({ distanceKm: 5.0, durationMin: 15 }));
-            }
+            dispatch(setRouteEstimate({ distanceKm: 5.0, durationMin: 15 }));
             return;
         }
 
         const controller = new AbortController();
+        let cancelled = false;
 
         const calculateRoute = async () => {
             setIsCalculatingRoute(true);
@@ -142,7 +147,7 @@ export default function VehicleSelectionScreen() {
                         { signal: controller.signal }
                     );
                     const result = await response.json();
-                    if (result?.status === 'OK' && result?.routes?.[0]) {
+                    if (!cancelled && result?.status === 'OK' && result?.routes?.[0]) {
                         const route = result.routes[0];
                         const distanceMeters = route.legs?.reduce(
                             (total: number, leg: any) => total + (leg.distance?.value || 0),
@@ -158,19 +163,23 @@ export default function VehicleSelectionScreen() {
                                 distanceKm: Number((distanceMeters / 1000).toFixed(2)),
                                 durationMin: Math.ceil(durationSeconds / 60) || 10,
                             }));
+                            setIsCalculatingRoute(false);
                             return;
                         }
                     }
                 }
 
-                const fallbackDistance = calculateHaversineDistanceKm(mapCoordinates);
-                const fallbackDuration = Math.ceil(fallbackDistance * 2.5);
-                dispatch(setRouteEstimate({
-                    distanceKm: fallbackDistance,
-                    durationMin: fallbackDuration,
-                }));
+                // Google Directions didn't work – use Haversine fallback
+                if (!cancelled) {
+                    const fallbackDistance = calculateHaversineDistanceKm(mapCoordinates);
+                    const fallbackDuration = Math.ceil(fallbackDistance * 2.5);
+                    dispatch(setRouteEstimate({
+                        distanceKm: fallbackDistance,
+                        durationMin: fallbackDuration,
+                    }));
+                }
             } catch (error: any) {
-                if (error?.name !== 'AbortError') {
+                if (!cancelled && error?.name !== 'AbortError') {
                     const fallbackDistance = calculateHaversineDistanceKm(mapCoordinates);
                     const fallbackDuration = Math.ceil(fallbackDistance * 2.5);
                     dispatch(setRouteEstimate({
@@ -179,14 +188,20 @@ export default function VehicleSelectionScreen() {
                     }));
                 }
             } finally {
-                setIsCalculatingRoute(false);
+                if (!cancelled) setIsCalculatingRoute(false);
             }
         };
 
+        // Clear previous estimate so the UI shows "Calculating..." while
+        // we recompute (avoids stale prices when locations change).
+        dispatch(setRouteEstimate({ distanceKm: null, durationMin: null }));
         calculateRoute();
 
-        return () => controller.abort();
-    }, [dispatch, mapCoordinates, routePointKey, pickup?.address, dropoff?.address]);
+        return () => {
+            cancelled = true;
+            controller.abort();
+        };
+    }, [dispatch, routePointKey, pickup?.address, dropoff?.address]);
 
     const { data: bikeEstimate, isFetching: isBikeFetching } = useEstimateOrderPriceQuery({
         distanceKm: routeDistanceKm ?? 0,

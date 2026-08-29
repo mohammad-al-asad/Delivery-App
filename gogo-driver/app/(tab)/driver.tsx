@@ -325,7 +325,6 @@ export default function DriverHomeScreen() {
             ref={mapRef}
             provider={PROVIDER_GOOGLE}
             style={StyleSheet.absoluteFill}
-            customMapStyle={lightMapStyle}
             initialRegion={{
               latitude: currentLocation.coords.latitude,
               longitude: currentLocation.coords.longitude,
@@ -591,7 +590,7 @@ export default function DriverHomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    // backgroundColor: Colors.background,
   },
   header: {
     padding: 20,

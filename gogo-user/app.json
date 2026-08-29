@@ -6,8 +6,13 @@
     "orientation": "portrait",
     "icon": "./assets/logo/logo.png",
     "scheme": "gogo",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/logo/splashLogo.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.gogo.user",
@@ -16,7 +21,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/logo/logo.png",
-        "backgroundColor": "#2D3748"
+        "backgroundColor": "#ffffff"
       },
       "package": "com.gogo.user",
       "googleServicesFile": "./google-services.json",
@@ -32,9 +37,9 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/logo/logo.png",
+          "image": "./assets/logo/splashLogo.png",
           "imageWidth": 200,
-          "backgroundColor": "#2D3748"
+          "backgroundColor": "#ffffff"
         }
       ],
       "expo-web-browser",

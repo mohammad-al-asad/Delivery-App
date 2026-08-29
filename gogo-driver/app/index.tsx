@@ -7,6 +7,5 @@ export default function Index() {
     if (token) {
         return <Redirect href="/(tab)/driver" />;
     }
-
-    return <Redirect href="/splash" />;
+    return <Redirect href="/(auth)/sign-in" />;
 }
