@@ -53,19 +53,14 @@
         }
       ],
       [
-        "react-native-maps",
-        {
-          "iosGoogleMapsApiKey": "AIzaSyCZEptpJ79M7XDpAvA2UdsZQ91BuAtFSEo",
-          "androidGoogleMapsApiKey": "AIzaSyCZEptpJ79M7XDpAvA2UdsZQ91BuAtFSEo"
-        }
-      ],
-      [
         "expo-image-picker",
         {
           "photosPermission": "The app accesses your photos to let you share them with your friends.",
           "cameraPermission": "The app accesses your camera to let you take delivery proof photos."
         }
-      ]
+      ],
+      "@react-native-firebase/app",
+      "@react-native-firebase/auth"
     ],
     "experiments": {
       "typedRoutes": true

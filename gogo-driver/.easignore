@@ -1,0 +1,17 @@
+# EAS ignore file
+# Ignore dependencies and build outputs to keep the upload archive small and clean
+node_modules/
+.expo/
+dist/
+web-build/
+
+# Ignore local native directories so EAS performs a clean prebuild in the cloud
+android/
+ios/
+
+# Logs and temp files
+*.log
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+.DS_Store

@@ -18,6 +18,10 @@ dist/
 **/.expo/
 web-build/
 **/web-build/
+android/
+**/android/
+ios/
+**/ios/
 
 # Logs
 logs
